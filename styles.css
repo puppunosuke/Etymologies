@@ -1,0 +1,231 @@
+/* ============================================
+   Etymologies — シス単リーダー
+   モバイル優先レイアウト
+   ============================================ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: #0e0e10;
+  color: #f0f0f0;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.app {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  height: 100dvh;
+  height: 100vh;
+}
+
+/* ---- 上半: iframe ペイン ---- */
+.frame-pane {
+  position: relative;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.frame-placeholder {
+  text-align: center;
+  color: #555;
+  padding: 1rem;
+}
+
+.placeholder-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.04em;
+}
+
+.placeholder-sub {
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.placeholder-range {
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+}
+
+.word-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.fallback-link {
+  position: absolute;
+  bottom: 0.6rem;
+  right: 0.6rem;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.fallback-link:active {
+  background: rgba(0,0,0,0.9);
+}
+
+/* ---- 下半: ダイヤル ペイン ---- */
+.dial-pane {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0e0e10;
+  padding: 0.5rem;
+  overflow: hidden;
+}
+
+.dial {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  touch-action: manipulation;
+}
+
+/* ---- ダイヤルのセグメント共通 ---- */
+.seg {
+  fill: #1d1d22;
+  stroke: #0e0e10;
+  stroke-width: 1.5;
+  cursor: pointer;
+  transition: fill 0.12s ease;
+}
+
+.seg:hover {
+  fill: #2a2a32;
+}
+
+.seg.is-selected {
+  fill: #4a8eff;
+}
+
+.seg.is-disabled {
+  fill: #141416;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 千の位の選択不可セグメント（視覚的に埋めるだけ、タップ不可・ラベルなし） */
+.seg-filler {
+  fill: #1d1d22;
+  stroke: #0e0e10;
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.seg-label {
+  fill: #d8d8d8;
+  font-size: 14px;
+  font-weight: 500;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.seg.is-selected + .seg-label,
+.seg-label.is-selected {
+  fill: #fff;
+  font-weight: 700;
+}
+
+/* ---- 中央 Decide ボタン ---- */
+.decide-bg {
+  fill: #2a2a32;
+  stroke: #4a4a52;
+  stroke-width: 2;
+  cursor: pointer;
+  transition: fill 0.15s ease, stroke 0.15s ease;
+}
+
+.decide-bg.is-ready {
+  fill: #2a5cb8;
+  stroke: #4a8eff;
+}
+
+.decide-bg.is-ready:hover {
+  fill: #3a6cc8;
+}
+
+.decide-bg.is-disabled {
+  cursor: not-allowed;
+}
+
+.decide-num {
+  fill: #888;
+  font-size: 22px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+.decide-num.is-ready {
+  fill: #fff;
+}
+
+.decide-label {
+  fill: #aaa;
+  font-size: 9px;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  letter-spacing: 0.15em;
+}
+
+.decide-label.is-ready {
+  fill: #cfe0ff;
+}
+
+/* ---- 桁ラベル（千・百・十・一） ---- */
+.digit-label {
+  fill: #555;
+  font-size: 10px;
+  font-weight: 500;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+/* ---- 横長 / PC レイアウト ---- */
+@media (min-aspect-ratio: 4/3) {
+  .app {
+    grid-template-rows: none;
+    grid-template-columns: 1fr 1fr;
+    height: 100vh;
+  }
+  .dial-pane {
+    padding: 1rem;
+  }
+}

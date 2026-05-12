@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1a1a">
+  <title>Etymologies — シス単リーダー</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <!-- 上半: iframe ペイン -->
+    <section class="frame-pane" id="framePane">
+      <div class="frame-placeholder" id="framePlaceholder">
+        <p class="placeholder-title">Etymologies</p>
+        <p class="placeholder-sub">下のダイヤルで番号を選んで <strong>Decide</strong> を押してね</p>
+        <p class="placeholder-range">1 〜 2000</p>
+      </div>
+      <iframe id="wordFrame" class="word-frame hidden" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+      <button id="fallbackLink" class="fallback-link hidden" type="button">新しいタブで開く ↗</button>
+    </section>
+
+    <!-- 下半: ダイヤル ペイン -->
+    <section class="dial-pane">
+      <svg id="dial" class="dial" viewBox="-180 -180 360 360" aria-label="番号入力ダイヤル" role="group">
+        <!-- ダイヤルは dial.js が動的に生成 -->
+      </svg>
+    </section>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
