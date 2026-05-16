@@ -1,6 +1,6 @@
 /* ============================================
-   Etymologies — シス単リーダー
-   モバイル優先レイアウト
+   Etymologies v2 — フラッシュカード学習アプリ
+   モバイル優先・ダークテーマ
    ============================================ */
 
 * {
@@ -12,7 +12,6 @@
 
 html, body {
   height: 100%;
-  overflow: hidden;
   background: #0e0e10;
   color: #f0f0f0;
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif;
@@ -20,15 +19,568 @@ html, body {
   -webkit-user-select: none;
 }
 
-.app {
-  display: grid;
-  grid-template-rows: 1fr 1fr;
+body {
+  display: flex;
+  flex-direction: column;
   height: 100dvh;
   height: 100vh;
+  overflow: hidden;
 }
 
-/* ---- 上半: iframe ペイン ---- */
-.frame-pane {
+.hidden {
+  display: none !important;
+}
+
+/* ---- ヘッダー ---- */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
+  background: #15151a;
+  border-bottom: 1px solid #26262e;
+  flex-shrink: 0;
+}
+
+.app-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #f0f0f0;
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.icon-btn:active {
+  background: #26262e;
+}
+
+/* ---- メイン領域・ビュー共通 ---- */
+.app-main {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+}
+
+/* ---- パネル（開始・結果ビューで共用）---- */
+.panel {
+  width: 100%;
+  max-width: 360px;
+  background: #1a1a20;
+  border: 1px solid #2a2a32;
+  border-radius: 16px;
+  padding: 1.6rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.view-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #cfcfd6;
+  letter-spacing: 0.06em;
+}
+
+/* ---- 初回ビュー ---- */
+.welcome-text {
+  font-size: 0.85rem;
+  color: #aaa;
+  line-height: 1.9;
+  text-align: center;
+}
+
+/* ---- 開始ビュー: レンジ入力 ---- */
+.range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.range-input {
+  width: 5.5rem;
+  padding: 0.6rem 0.4rem;
+  background: #0e0e10;
+  border: 1px solid #3a3a44;
+  border-radius: 10px;
+  color: #f0f0f0;
+  font-size: 1.2rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.range-input:focus {
+  outline: none;
+  border-color: #4a8eff;
+}
+
+.range-sep {
+  color: #888;
+  font-size: 1.1rem;
+}
+
+.range-note {
+  font-size: 0.75rem;
+  color: #777;
+}
+
+.range-error {
+  font-size: 0.8rem;
+  color: #ff6b6b;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ---- ボタン ---- */
+.primary-btn {
+  width: 100%;
+  padding: 0.85rem;
+  background: #2a5cb8;
+  border: 1px solid #4a8eff;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.primary-btn:active {
+  background: #3a6cc8;
+}
+
+.secondary-btn {
+  width: 100%;
+  padding: 0.7rem;
+  background: transparent;
+  border: 1px solid #3a3a44;
+  border-radius: 12px;
+  color: #aaa;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.secondary-btn:active {
+  background: #1f1f26;
+}
+
+/* ---- カードビュー ---- */
+.card-progress {
+  position: absolute;
+  top: 1.2rem;
+  font-size: 0.85rem;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.flashcard {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  min-height: 42vh;
+  background: #1d1d24;
+  border: 1px solid #2e2e38;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.6rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.card-number {
+  position: absolute;
+  top: 0.9rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #6a6a72;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.flashcard:active {
+  background: #22222a;
+}
+
+.flashcard[data-flipped="true"] {
+  border-color: #4a8eff;
+}
+
+.card-text {
+  font-size: 1.7rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.card-hint {
+  font-size: 0.75rem;
+  color: #666;
+  letter-spacing: 0.06em;
+}
+
+.card-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.4rem;
+  width: 100%;
+  max-width: 380px;
+}
+
+.judge-btn {
+  flex: 1;
+  padding: 0.9rem;
+  font-size: 1.4rem;
+  border-radius: 14px;
+  border: 1px solid;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.judge-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.judge-btn:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+.judge-ok {
+  background: #1c3a2a;
+  border-color: #2f7d52;
+  color: #6fdc9c;
+}
+
+.judge-ng {
+  background: #3a1c22;
+  border-color: #8a3a44;
+  color: #ff8a96;
+}
+
+/* カード裏の「この単語の語源を見る」ボタン */
+.etym-link-btn {
+  margin-top: 0.9rem;
+  padding: 0.55rem 1rem;
+  background: transparent;
+  border: 1px solid #3a3a44;
+  border-radius: 10px;
+  color: #9a9aa6;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.etym-link-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.etym-link-btn:not(:disabled):active {
+  background: #1f1f26;
+}
+
+/* ---- 結果ビュー ---- */
+.result-score {
+  display: flex;
+  gap: 2rem;
+  padding: 0.6rem 0;
+}
+
+.score-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.score-item span {
+  font-size: 2.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.score-item small {
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
+}
+
+.score-ok span, .score-ok small { color: #6fdc9c; }
+.score-ng span, .score-ng small { color: #ff8a96; }
+
+/* ---- FAB（語源ビューア起動/終了）---- */
+.fab {
+  position: fixed;
+  right: 1.1rem;
+  bottom: 1.1rem;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  background: #2a2a32;
+  border: 1px solid #4a4a55;
+  color: #e0e0e8;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  /* 語源ビューア（view-fullscreen, z-index:25）より前面に。
+     開いている間は FAB が「閉じる」ボタンとして機能するため */
+  z-index: 26;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.fab:active {
+  background: #34343e;
+}
+
+/* ---- 設定ドロワー ---- */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 30;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 78%;
+  max-width: 300px;
+  background: #17171c;
+  border-right: 1px solid #2a2a32;
+  z-index: 31;
+  padding: 1.4rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.drawer-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #cfcfd6;
+}
+
+.setting-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.setting-label {
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.seg-control {
+  display: flex;
+  border: 1px solid #3a3a44;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.seg-option {
+  flex: 1;
+  padding: 0.55rem;
+  background: #0e0e10;
+  border: none;
+  color: #888;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.seg-option.is-active {
+  background: #2a5cb8;
+  color: #fff;
+}
+
+.size-input {
+  width: 5rem;
+  padding: 0.5rem;
+  background: #0e0e10;
+  border: 1px solid #3a3a44;
+  border-radius: 8px;
+  color: #f0f0f0;
+  font-size: 1rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.size-input:focus {
+  outline: none;
+  border-color: #4a8eff;
+}
+
+/* ドロワー下部のリンクボタン（統計・履歴へ）。margin-top:auto で最下部に寄せる */
+.drawer-link {
+  margin-top: auto;
+  padding: 0.7rem;
+  background: #1f1f26;
+  border: 1px solid #3a3a44;
+  border-radius: 10px;
+  color: #cfcfd6;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.drawer-link:active {
+  background: #26262e;
+}
+
+/* ============================================
+   統計・履歴ビュー
+   ============================================ */
+/* 縦に長いのでビューをスクロール可能にする（.view は中央寄せなので上書き）*/
+.view-scroll {
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+
+.history-panel {
+  width: 100%;
+  max-width: 420px;
+  background: #1a1a20;
+  border: 1px solid #2a2a32;
+  border-radius: 16px;
+  padding: 1.4rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+  background: #0e0e10;
+  border: 1px solid #2a2a32;
+  border-radius: 12px;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  color: #f0f0f0;
+}
+
+.stat-value span {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #4a8eff;
+}
+
+.history-subhead {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #cfcfd6;
+  letter-spacing: 0.04em;
+}
+
+.history-empty {
+  font-size: 0.8rem;
+  color: #777;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.history-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  background: #0e0e10;
+  border: 1px solid #22222a;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+.hist-num {
+  color: #6a6a72;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.hist-word {
+  flex: 1;
+  color: #f0f0f0;
+  word-break: break-word;
+}
+
+.hist-time {
+  color: #6a6a72;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.hist-mark {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.hist-ok { color: #6fdc9c; }
+.hist-ng { color: #ff8a96; }
+
+/* ============================================
+   語源ビューア（全画面オーバーレイ・v1 機能）
+   ============================================ */
+.view-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  padding: 0;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr;
+  /* .view の align-items:center / justify-content:center がグリッドに漏れると
+     セルが中身サイズに縮んでしまうので、stretch を明示して打ち消す */
+  align-items: stretch;
+  justify-items: stretch;
+  background: #0e0e10;
+}
+
+.etym-frame-pane {
   position: relative;
   background: #fff;
   overflow: hidden;
@@ -63,22 +615,23 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 
+/* iframe はペインに絶対配置で貼り付ける。
+   flex の子に height:100% を効かせると親の高さ解決が不安定で
+   iframe が初期サイズ（約150px）に潰れるため、position で確実に埋める */
 .word-frame {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: none;
   background: #fff;
 }
 
-.hidden {
-  display: none !important;
-}
-
 .fallback-link {
   position: absolute;
   bottom: 0.6rem;
   right: 0.6rem;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   color: #fff;
   border: none;
   padding: 0.4rem 0.7rem;
@@ -89,28 +642,29 @@ html, body {
 }
 
 .fallback-link:active {
-  background: rgba(0,0,0,0.9);
+  background: rgba(0, 0, 0, 0.9);
 }
 
-/* ---- 下半: ダイヤル ペイン ---- */
-.dial-pane {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.etym-dial-pane {
+  position: relative;
   background: #0e0e10;
   padding: 0.5rem;
   overflow: hidden;
 }
 
+/* ダイヤルもペインに絶対配置で貼り付ける（iframe と同じ理由）。
+   SVG は width/height:auto だと潰れるので 100% を明示する。
+   preserveAspectRatio 既定で円は正方形を保ったまま中央に収まる */
 .dial {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  max-width: 100%;
-  max-height: 100%;
   touch-action: manipulation;
 }
 
-/* ---- ダイヤルのセグメント共通 ---- */
+/* ---- ダイヤルのセグメント ---- */
 .seg {
   fill: #1d1d22;
   stroke: #0e0e10;
@@ -133,7 +687,6 @@ html, body {
   pointer-events: none;
 }
 
-/* 千の位の選択不可セグメント（視覚的に埋めるだけ、タップ不可・ラベルなし） */
 .seg-filler {
   fill: #1d1d22;
   stroke: #0e0e10;
@@ -208,7 +761,6 @@ html, body {
   fill: #cfe0ff;
 }
 
-/* ---- 桁ラベル（千・百・十・一） ---- */
 .digit-label {
   fill: #555;
   font-size: 10px;
@@ -218,14 +770,15 @@ html, body {
   pointer-events: none;
 }
 
-/* ---- 横長 / PC レイアウト ---- */
+/* ---- 横長 / PC レイアウト（語源ビューアのみ）---- */
 @media (min-aspect-ratio: 4/3) {
-  .app {
-    grid-template-rows: none;
+  .view-fullscreen {
+    /* 1行を画面高いっぱいに確定させる。none（auto）だと中身依存で
+       高さが定まらず、iframe の height:100% が解決できない */
+    grid-template-rows: 1fr;
     grid-template-columns: 1fr 1fr;
-    height: 100vh;
   }
-  .dial-pane {
+  .etym-dial-pane {
     padding: 1rem;
   }
 }

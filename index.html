@@ -3,30 +3,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#1a1a1a">
-  <title>Etymologies — シス単リーダー</title>
+  <meta name="theme-color" content="#0e0e10">
+  <title>Etymologies</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="app">
-    <!-- 上半: iframe ペイン -->
-    <section class="frame-pane" id="framePane">
-      <div class="frame-placeholder" id="framePlaceholder">
-        <p class="placeholder-title">Etymologies</p>
-        <p class="placeholder-sub">下のダイヤルで番号を選んで <strong>Decide</strong> を押してね</p>
-        <p class="placeholder-range">1 〜 2000</p>
+  <header class="app-header">
+    <button id="menuBtn" class="icon-btn" type="button" aria-label="メニュー">☰</button>
+    <h1 class="app-title">Etymologies</h1>
+  </header>
+
+  <main class="app-main">
+    <!-- 初回ビュー: ようこそ＋簡単な使い方（isFirstRun() が true のときだけ表示）-->
+    <section id="welcomeView" class="view hidden">
+      <div class="panel">
+        <h2 class="view-heading">はじめよう</h2>
+        <p class="welcome-text">
+          シス単2000語をフラッシュカードで覚えるアプリだよ。<br>
+          出題範囲を選んで、カードをタップでめくって ◯／× で答えるだけ。<br>
+          右下の「語」ボタンから語源ビューアも開けるよ。
+        </p>
+        <button id="welcomeStartBtn" class="primary-btn" type="button">はじめる</button>
       </div>
-      <iframe id="wordFrame" class="word-frame hidden" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
-      <button id="fallbackLink" class="fallback-link hidden" type="button">新しいタブで開く ↗</button>
     </section>
 
-    <!-- 下半: ダイヤル ペイン -->
-    <section class="dial-pane">
-      <svg id="dial" class="dial" viewBox="-180 -180 360 360" aria-label="番号入力ダイヤル" role="group">
-        <!-- ダイヤルは dial.js が動的に生成 -->
-      </svg>
+    <!-- 開始ビュー: 出題レンジの入力 -->
+    <section id="startView" class="view hidden">
+      <div class="panel">
+        <h2 class="view-heading">出題範囲</h2>
+        <div class="range-inputs">
+          <input id="rangeMin" class="range-input" type="number" min="1" max="2000" inputmode="numeric" aria-label="開始番号">
+          <span class="range-sep">〜</span>
+          <input id="rangeMax" class="range-input" type="number" min="1" max="2000" inputmode="numeric" aria-label="終了番号">
+        </div>
+        <p class="range-note">1 〜 2000 の範囲で指定</p>
+        <p id="rangeError" class="range-error hidden"></p>
+        <button id="startBtn" class="primary-btn" type="button">はじめる</button>
+      </div>
+    </section>
+
+    <!-- カードビュー: フラッシュカード本体 -->
+    <section id="cardView" class="view hidden">
+      <div class="card-progress"><span id="cardCount">0</span> / <span id="cardTotal">20</span></div>
+      <div id="flashcard" class="flashcard" data-flipped="false" role="button" tabindex="0" aria-label="カード（タップでめくる）">
+        <p id="cardNumber" class="card-number"></p>
+        <p id="cardText" class="card-text"></p>
+        <p id="cardHint" class="card-hint">タップでめくる</p>
+      </div>
+      <div class="card-actions">
+        <button id="ngBtn" class="judge-btn judge-ng" type="button" disabled>×</button>
+        <button id="okBtn" class="judge-btn judge-ok" type="button" disabled>◯</button>
+      </div>
+      <!-- めくった後だけ有効。タップで語源ビューアをこの単語で開く -->
+      <button id="cardEtymBtn" class="etym-link-btn" type="button" disabled>この単語の語源を見る</button>
+    </section>
+
+    <!-- 結果ビュー: セッション完了スコア -->
+    <section id="resultView" class="view hidden">
+      <div class="panel">
+        <h2 class="view-heading">セッション完了</h2>
+        <div class="result-score">
+          <div class="score-item score-ok"><span id="scoreOk">0</span><small>◯</small></div>
+          <div class="score-item score-ng"><span id="scoreNg">0</span><small>×</small></div>
+        </div>
+        <button id="againBtn" class="primary-btn" type="button">もう一セッション</button>
+        <button id="endBtn" class="secondary-btn" type="button">終了</button>
+      </div>
+    </section>
+
+    <!-- 統計・履歴ビュー: ハンバーガーメニューから開く -->
+    <section id="historyView" class="view view-scroll hidden">
+      <div class="history-panel">
+        <h2 class="view-heading">統計・履歴</h2>
+        <div class="stat-row">
+          <span class="stat-label">学習済み単語数</span>
+          <span class="stat-value"><span id="statStudied">0</span> 語</span>
+        </div>
+        <h3 class="history-subhead">解答履歴</h3>
+        <p id="historyEmpty" class="history-empty hidden">まだ履歴がないよ。カードをめくってみてね〜</p>
+        <ul id="historyList" class="history-list"></ul>
+        <button id="historyBackBtn" class="secondary-btn" type="button">戻る</button>
+      </div>
+    </section>
+
+    <!-- 語源ビューア: FAB から全画面で開く（v1 機能）-->
+    <section id="etymologyView" class="view view-fullscreen hidden">
+      <div class="etym-frame-pane">
+        <div class="frame-placeholder" id="framePlaceholder">
+          <p class="placeholder-title">語源ビューア</p>
+          <p class="placeholder-sub">下のダイヤルで番号を選んでね</p>
+          <p class="placeholder-range">1 〜 2000</p>
+        </div>
+        <iframe id="wordFrame" class="word-frame hidden" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+        <button id="fallbackLink" class="fallback-link hidden" type="button">新しいタブで開く ↗</button>
+      </div>
+      <div class="etym-dial-pane">
+        <svg id="dial" class="dial" viewBox="-180 -180 360 360" aria-label="番号入力ダイヤル" role="group"></svg>
+      </div>
     </section>
   </main>
+
+  <!-- 語源ビューア起動 / 終了 FAB（同じ位置でトグル）-->
+  <button id="fab" class="fab" type="button" aria-label="語源ビューアを開く">語</button>
+
+  <!-- 設定ドロワー -->
+  <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
+  <aside id="drawer" class="drawer hidden" aria-label="設定">
+    <h2 class="drawer-heading">設定</h2>
+    <div class="setting-row">
+      <span class="setting-label">出題形式</span>
+      <div class="seg-control" id="directionControl">
+        <button class="seg-option" type="button" data-dir="en-ja">英 → 日</button>
+        <button class="seg-option" type="button" data-dir="ja-en">日 → 英</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <label class="setting-label" for="sessionSizeInput">1セッションの問題数</label>
+      <input id="sessionSizeInput" class="size-input" type="number" min="1" max="200" inputmode="numeric">
+    </div>
+    <button id="historyBtn" class="drawer-link" type="button">統計・履歴を見る</button>
+  </aside>
 
   <script type="module" src="js/main.js"></script>
 </body>

@@ -9,7 +9,7 @@
 //
 // 状態モデル: state = [千, 百, 十, 一]、各要素は null or 0〜9
 
-import { RANGE } from "./data.js";
+import { RANGE } from "../data.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
