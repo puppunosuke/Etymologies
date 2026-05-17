@@ -1,39 +1,117 @@
-// ストレージ層: localStorage の読み書きを抽象化する
+// ストレージ層: ログイン中は Firestore、未ログインは localStorage を使う
 //
-// すべての API を async にしてあるのは、将来 chrome.storage.sync
-// （非同期 API）へ差し替えても呼び出し側を変えずに済むようにするため。
-// 今は中身が同期的な localStorage でも、呼び出し側は await して使う。
+// 呼び出し側（main.js, session.js 等）からは「ログインしてるかどうか」を
+// 意識せずに使える。各 getter/setter は v2 時代と同じシグネチャ。
+//
+// 構造:
+//   ログイン中  →  Firestore の /users/{uid}/data/main ドキュメントに全部詰める
+//   未ログイン →  localStorage に v2 と同じ形式で保存
+//
+// メモリキャッシュを持つことで、操作のたびに通信しない。
+// 認証状態が変わったらキャッシュを破棄して次回ロード時に取り直す。
+
+import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { auth, db } from "./firebase-init.js";
 
 const PREFIX = "etym:";
-
-// 解答履歴の保持上限。これを超えたら古いものから捨てる（localStorage 肥大化の防止）
 const HISTORY_LIMIT = 1000;
 
-// 各キーのデフォルト値。保存値が無い／壊れているときはこれを返す
 const DEFAULTS = {
-  // 出題形式 direction: "en-ja"（英→日）or "ja-en"（日→英）
   settings: { direction: "en-ja", sessionSize: 20 },
-  // 進捗データ: { "番号": { stage, nextDue } }
   progress: {},
-  // 最後に使った出題レンジ。次回セッションの初期値になる
   lastRange: { min: 1, max: 100 },
-  // 解答履歴: [{ n: 番号, result: "o"|"x", at: ISO文字列 }] を古い順に積む
   history: [],
 };
 
-async function get(key) {
-  const raw = localStorage.getItem(PREFIX + key);
-  if (raw === null) return structuredClone(DEFAULTS[key]);
-  try {
-    return JSON.parse(raw);
-  } catch {
-    // 壊れたデータはデフォルトで上書き回復
-    return structuredClone(DEFAULTS[key]);
+// --- 認証状態の追跡 --------------------------------------------------------
+
+let currentUser = null;
+let cache = null; // 全データのメモリキャッシュ。null なら未ロード
+
+// 初回の認証状態が確定するまで loadCache を待たせる Promise。
+// これがないと、ページロード直後（onAuthStateChanged の初回コールバック前）に
+// getSettings() などが呼ばれて localStorage 経路を誤って通ってしまう。
+let resolveAuthReady;
+const authReady = new Promise((r) => { resolveAuthReady = r; });
+
+onAuthStateChanged(auth, (user) => {
+  const userChanged = (currentUser?.uid ?? null) !== (user?.uid ?? null);
+  currentUser = user;
+  if (userChanged) {
+    cache = null; // ユーザーが切り替わったら次回ロード時に取り直す
+  }
+  resolveAuthReady(); // 2回目以降は no-op
+});
+
+// --- キャッシュのロード／保存 ----------------------------------------------
+
+async function loadCache() {
+  if (cache !== null) return cache;
+  await authReady;
+
+  if (currentUser) {
+    const ref = doc(db, "users", currentUser.uid, "data", "main");
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      cache = snap.data();
+    } else {
+      // 初回ログイン: そのデバイスの localStorage の進捗をクラウドへ吸い上げる
+      // 注意: 2台目以降から初回ログインした場合はそのデバイスのローカル進捗が
+      // 使われる。クラウド側に既にデータがあるなら snap.exists() が true になる
+      // ので、ここには到達しない（クラウド優先）。
+      cache = loadFromLocalStorage();
+      await setDoc(ref, cache);
+    }
+  } else {
+    cache = loadFromLocalStorage();
+  }
+  return cache;
+}
+
+async function saveCache() {
+  if (currentUser) {
+    const ref = doc(db, "users", currentUser.uid, "data", "main");
+    await setDoc(ref, cache);
+  } else {
+    saveToLocalStorage(cache);
   }
 }
 
+function loadFromLocalStorage() {
+  const out = {};
+  for (const key of Object.keys(DEFAULTS)) {
+    const raw = localStorage.getItem(PREFIX + key);
+    if (raw === null) {
+      out[key] = structuredClone(DEFAULTS[key]);
+      continue;
+    }
+    try {
+      out[key] = JSON.parse(raw);
+    } catch {
+      out[key] = structuredClone(DEFAULTS[key]);
+    }
+  }
+  return out;
+}
+
+function saveToLocalStorage(data) {
+  for (const key of Object.keys(DEFAULTS)) {
+    localStorage.setItem(PREFIX + key, JSON.stringify(data[key]));
+  }
+}
+
+// --- 共通 get / set --------------------------------------------------------
+
+async function get(key) {
+  const c = await loadCache();
+  return structuredClone(c[key] ?? DEFAULTS[key]);
+}
+
 async function set(key, value) {
-  localStorage.setItem(PREFIX + key, JSON.stringify(value));
+  const c = await loadCache();
+  c[key] = value;
+  await saveCache();
 }
 
 // --- 設定 ---
@@ -56,12 +134,12 @@ export const getHistory = () => get("history");
  * @param {{n:number, result:"o"|"x", at:string}} entry
  */
 export async function appendHistory(entry) {
-  const history = await get("history");
-  history.push(entry);
-  if (history.length > HISTORY_LIMIT) {
-    history.splice(0, history.length - HISTORY_LIMIT);
+  const c = await loadCache();
+  c.history.push(entry);
+  if (c.history.length > HISTORY_LIMIT) {
+    c.history.splice(0, c.history.length - HISTORY_LIMIT);
   }
-  await set("history", history);
+  await saveCache();
 }
 
 /**

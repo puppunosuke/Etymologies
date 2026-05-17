@@ -122,6 +122,20 @@
       <input id="sessionSizeInput" class="size-input" type="number" min="1" max="200" inputmode="numeric">
     </div>
     <button id="historyBtn" class="drawer-link" type="button">統計・履歴を見る</button>
+
+    <div class="account-section">
+      <span class="setting-label">アカウント</span>
+      <!-- 未ログイン状態 -->
+      <div id="accountLoggedOut" class="account-state">
+        <p class="account-note">クラウド同期するにはログインしてね</p>
+        <button id="signInBtn" class="primary-btn" type="button">Googleでログイン</button>
+      </div>
+      <!-- ログイン中 -->
+      <div id="accountLoggedIn" class="account-state hidden">
+        <p class="account-email" id="accountEmail"></p>
+        <button id="signOutBtn" class="secondary-btn" type="button">ログアウト</button>
+      </div>
+    </div>
   </aside>
 
   <script type="module" src="js/main.js"></script>

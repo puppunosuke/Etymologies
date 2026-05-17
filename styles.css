@@ -438,9 +438,8 @@ body {
   border-color: #4a8eff;
 }
 
-/* ドロワー下部のリンクボタン（統計・履歴へ）。margin-top:auto で最下部に寄せる */
+/* ドロワー内のリンクボタン（統計・履歴へ） */
 .drawer-link {
-  margin-top: auto;
   padding: 0.7rem;
   background: #1f1f26;
   border: 1px solid #3a3a44;
@@ -452,6 +451,35 @@ body {
 
 .drawer-link:active {
   background: #26262e;
+}
+
+/* アカウントセクション。margin-top:auto でドロワーの最下部に寄せる */
+.account-section {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #2a2a32;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.account-state {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.account-note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #8a8a92;
+}
+
+.account-email {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #cfcfd6;
+  word-break: break-all;
 }
 
 /* ============================================

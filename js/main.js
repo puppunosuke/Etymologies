@@ -10,6 +10,7 @@ import {
 } from "./storage.js";
 import { startSession, judge, getSession } from "./flashcard/session.js";
 import { initEtymology, showWord } from "./etymology/viewer.js";
+import { signInWithGoogle, signOutUser, watchAuthState } from "./auth.js";
 import * as ui from "./flashcard/ui.js";
 
 let settings = null;
@@ -37,6 +38,9 @@ async function main() {
   renderSettings();
 
   wireEvents();
+
+  // ログイン状態を監視してドロワーのアカウントセクションを切り替える
+  watchAuthState(renderAccount);
 
   // 進捗データが空（＝まだ一度も学習していない）なら初回ビューを出す
   ui.showView((await isFirstRun()) ? "welcomeView" : "startView");
@@ -75,6 +79,52 @@ function wireEvents() {
 
   // 語源ビューア起動 / 終了 FAB
   document.getElementById("fab").addEventListener("click", onFabToggle);
+
+  // アカウント（ログイン／ログアウト）
+  document.getElementById("signInBtn").addEventListener("click", onSignIn);
+  document.getElementById("signOutBtn").addEventListener("click", onSignOut);
+}
+
+// --- アカウント（認証） -----------------------------------------------------
+
+async function onSignIn() {
+  try {
+    await signInWithGoogle();
+  } catch (err) {
+    // ユーザーがポップアップを閉じた場合などは正常系として扱う
+    if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
+      return;
+    }
+    console.error("ログインに失敗:", err);
+    alert("ログインに失敗しました: " + err.message);
+  }
+}
+
+async function onSignOut() {
+  try {
+    await signOutUser();
+  } catch (err) {
+    console.error("ログアウトに失敗:", err);
+  }
+}
+
+/**
+ * 認証状態に応じてドロワーのアカウントセクションを切り替える。
+ * onAuthStateChanged から呼ばれる。user が null ならログアウト中。
+ */
+function renderAccount(user) {
+  const loggedOut = document.getElementById("accountLoggedOut");
+  const loggedIn = document.getElementById("accountLoggedIn");
+  const email = document.getElementById("accountEmail");
+  if (user) {
+    loggedOut.classList.add("hidden");
+    loggedIn.classList.remove("hidden");
+    email.textContent = user.email || user.displayName || "ログイン中";
+  } else {
+    loggedOut.classList.remove("hidden");
+    loggedIn.classList.add("hidden");
+    email.textContent = "";
+  }
 }
 
 // ---- 統計・履歴ビュー ----
