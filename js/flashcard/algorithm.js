@@ -1,21 +1,21 @@
 // 出題アルゴリズム: エビングハウスの忘却曲線ベースの間隔反復
 //
 // 各単語の状態（カード）: { stage, nextDue }
-//   stage   : 0..7。0 = 初出（まだ一度も出題していない）。◯ で +1、7 で頭打ち
-//   nextDue : 次回出題予定時刻（ISO文字列）。null = 初出（一度も出題されていない）
+//   stage   : 0..7。0 = 未正答（◯ を取ったことが一度もない）。◯ で +1、7 で頭打ち
+//   nextDue : 次回出題予定時刻（ISO文字列）。null = 一度も出題されていない or 未正答
 //
-// stage が 1 以上になると nextDue で復習スケジュールが管理される。
-// stage と間隔の対応: stage 1 → INTERVALS[0]、… stage 7 → INTERVALS[6]
+// stage は「一度でも◯したら次のステージへ」のシンプル設計。
+// 同じ単語で何回 × しても stage は上がらず、◯ を取って初めて上がる。
 //
 // 出題ロジック:
-//   1. レンジ内で nextDue ≤ now のもの（期限到来）→ その中からランダムに1つ出す
-//      （期限が来た単語はどれも等しく復習対象として扱う。超過時間の長短では順位を付けない）
-//   2. 期限到来が無ければ、初出（nextDue == null）からランダムに1つ出す
-//   3. それも無ければ null（今出せる単語が無い）
+//   レンジ内の「期限到来（nextDue ≤ now）」と「未正答（nextDue == null）」を
+//   同列のプールに統合し、その中からランダムに1つ出す。
+//   未正答 と nextDue 期間が経過した単語は基本的に同じ扱い。
 //
 // 評価:
 //   ◯ → stage++（最大7）、nextDue = now + INTERVALS[stage-1]
-//   × → stage 維持、nextDue = now + 5分（同セッション中に再挑戦させる）
+//   × → stage 維持、nextDue = now（即時、出題プールに即戻る）
+//        間違え続ける限り出題プールに居続ける挙動を狙ったもの。
 //
 // 卒業（出題プールから外す）は無し。永続的に復習ループに残る。
 
@@ -36,9 +36,6 @@ const INTERVALS = [
   31 * DAY, // stage 7: 31日後（以降ここで頭打ち）
 ];
 
-// × のとき次に出すまでの待ち時間
-const WRONG_DELAY = 5 * MIN;
-
 function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -53,9 +50,9 @@ export function newCard() {
 /**
  * 進捗データ・レンジ・現在時刻から「次に出題する番号」を1つ選ぶ。
  *
- * 期限到来済みの単語があればそこから、無ければ初出から、いずれもランダムに選ぶ。
- * 期限の超過時間で順位は付けない（付けると nextDue がミリ秒単位でばらつくため
- * 実質的に決定的な順送りになり、ランダム性が失われる）。
+ * 期限到来済み（nextDue ≤ now）と未正答（nextDue == null）を1つのプールに統合し、
+ * その中からランダムに1つ選ぶ。期限の超過時間で順位は付けない（付けると nextDue が
+ * ミリ秒単位でばらつくため実質的に決定的な順送りになり、ランダム性が失われる）。
  *
  * @param {Object} progress - { "番号": { stage, nextDue } } 形式の進捗データ
  * @param {{min:number, max:number}} range - 出題レンジ
@@ -64,34 +61,24 @@ export function newCard() {
  */
 export function pickNext(progress, range, now) {
   const nowMs = now.getTime();
-  const duePool = []; // 期限到来した番号
-  const freshPool = []; // 初出の番号
+  const pool = []; // 期限到来 + 未正答 を同列に積む
 
   for (let n = range.min; n <= range.max; n++) {
     const card = progress[n];
     if (!card || card.nextDue == null) {
-      // 初出（一度も出題していない）
-      freshPool.push(n);
+      // 未正答（一度も◯を取っていない）
+      pool.push(n);
     } else {
       const dueMs = new Date(card.nextDue).getTime();
       if (dueMs <= nowMs) {
-        duePool.push(n);
+        pool.push(n);
       }
-      // nextDue が未来のものは今は出さない（スキップ）
+      // nextDue が未来（=◯後の待機期間中）のものは今は出さない
     }
   }
 
-  if (duePool.length > 0) {
-    // 期限が来た単語はすべて同列。その中からランダムに1つ
-    return pickRandom(duePool);
-  }
-
-  if (freshPool.length > 0) {
-    // 初出もすべて同列。レンジ内からランダムに1つ
-    return pickRandom(freshPool);
-  }
-
-  return null;
+  if (pool.length === 0) return null;
+  return pickRandom(pool);
 }
 
 /**
@@ -111,8 +98,9 @@ export function applyResult(card, result, now) {
     c.stage = Math.min(c.stage + 1, MAX_STAGE);
     c.nextDue = new Date(nowMs + INTERVALS[c.stage - 1]).toISOString();
   } else {
-    // × : stage はそのまま。5分後にもう一度出題する
-    c.nextDue = new Date(nowMs + WRONG_DELAY).toISOString();
+    // × : stage はそのまま。即時に出題プールに戻す（nextDue = now）
+    // pickNext 側の `dueMs <= nowMs` 判定で同時刻も「期限到来」扱いになる。
+    c.nextDue = new Date(nowMs).toISOString();
   }
 
   return c;
