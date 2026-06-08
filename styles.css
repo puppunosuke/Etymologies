@@ -503,6 +503,18 @@ body {
   gap: 1rem;
 }
 
+/* 履歴が伸びても常に画面上端に貼り付く戻るボタン */
+.history-back {
+  width: auto;
+  align-self: flex-start;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #1a1a20;
+}
+
 .stat-row {
   display: flex;
   align-items: baseline;
