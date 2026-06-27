@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Etymologies: ダイヤル入力 / Lime #8FB93C -->
+  <rect width="512" height="512" fill="#F7F6F2"/>
+  <!-- ダイヤル外輪（太い黒円弧） -->
+  <circle cx="256" cy="256" r="178" fill="none" stroke="#111111" stroke-width="20"/>
+  <!-- 目盛り（12個・Lime） -->
+  <g stroke="#8FB93C" stroke-width="10" stroke-linecap="round">
+    <line x1="256" y1="82" x2="256" y2="106"/>
+    <line x1="345" y1="105" x2="333" y2="125" transform="rotate(30 256 256)"/>
+    <line x1="345" y1="105" x2="333" y2="125" transform="rotate(60 256 256)"/>
+    <line x1="434" y1="256" x2="410" y2="256"/>
+    <line x1="345" y1="105" x2="333" y2="125" transform="rotate(120 256 256)"/>
+    <line x1="345" y1="105" x2="333" y2="125" transform="rotate(150 256 256)"/>
+    <line x1="256" y1="430" x2="256" y2="406"/>
+    <line x1="345" y1="105" x2="333" y2="125" transform="rotate(210 256 256)"/>
+    <line x1="345" y1="105" x2="333" y2="125" transform="rotate(240 256 256)"/>
+    <line x1="78" y1="256" x2="102" y2="256"/>
+    <line x1="345" y1="105" x2="333" y2="125" transform="rotate(300 256 256)"/>
+    <line x1="345" y1="105" x2="333" y2="125" transform="rotate(330 256 256)"/>
+  </g>
+  <!-- ダイヤル内側（Lime塗り） -->
+  <circle cx="256" cy="256" r="108" fill="#8FB93C"/>
+  <!-- 中央テキスト代わりの英字イニシャル風シェイプ（白） -->
+  <text x="256" y="296" text-anchor="middle" font-size="96" font-family="Inter,sans-serif"
+        font-weight="700" fill="#F7F6F2">E</text>
+  <!-- 指針（黒） -->
+  <line x1="256" y1="256" x2="256" y2="110" stroke="#111111" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="256" cy="256" r="12" fill="#111111"/>
+</svg>
